@@ -1,0 +1,175 @@
+To install your own chaincode on a test network in Hyperledger Fabric, you can follow these steps:
+
+1. Start the test network: Start the Hyperledger Fabric test network using the `./network.sh up` command. This will start the network and create the necessary Docker containers for the peers, orderers, and other components.
+
+2. Package the chaincode: Package your chaincode using the `peer lifecycle chaincode package` command. For example, if you have written your chaincode in Go, you can package it by running the following command: 
+
+```
+peer lifecycle chaincode package mycc.tar.gz --path /path/to/chaincode/directory --lang golang --label mycc_1.0
+```
+
+This will create a TAR file named `mycc.tar.gz` that contains your chaincode package.
+
+3. Install the chaincode: Install the chaincode package on the peers using the `peer lifecycle chaincode install` command. For example, you can install the chaincode package on the first peer by running the following command:
+
+```
+peer lifecycle chaincode install mycc.tar.gz
+```
+
+This will install the chaincode package on the first peer.
+
+4. Approve the chaincode definition: Approve the chaincode definition using the `peer lifecycle chaincode approveformyorg` command. For example, you can approve the chaincode definition for the first organization by running the following command:
+
+```
+peer lifecycle chaincode approveformyorg --channelID mychannel --name mycc --version 1.0 --init-required --package-id mycc_1.0:abc123 --sequence 1 --tls --cafile /path/to/ca.crt
+```
+
+This command will approve the chaincode definition for the first organization, using the specified package ID (`mycc_1.0:abc123`) and sequence number (`1`).
+
+5. Check the status: Check the status of the chaincode definition using the `peer lifecycle chaincode checkcommitreadiness` command. This command will ensure that the chaincode definition has been approved by all organizations and is ready to be committed. For example, you can check the status of the chaincode definition by running the following command:
+
+```
+peer lifecycle chaincode checkcommitreadiness --channelID mychannel --name mycc --version 1.0 --sequence 1 --output json --tls --cafile /path/to/ca.crt
+```
+
+This command will output a JSON object that shows the approval status of the chaincode definition.
+
+6. Commit the chaincode definition: Commit the chaincode definition using the `peer lifecycle chaincode commit` command. For example, you can commit the chaincode definition by running the following command:
+
+```
+peer lifecycle chaincode commit --channelID mychannel --name mycc --version 1.0 --sequence 1 --init-required --tls --cafile /path/to/ca.crt
+```
+
+This command will commit the chaincode definition to the specified channel.
+
+7. Test the chaincode: Test the chaincode by invoking its functions using the `peer chaincode invoke` and `peer chaincode query` commands. For example, you can invoke the `InitLedger` function of the chaincode by running the following command:
+
+```
+peer chaincode invoke -n mycc -C mychannel -c '{"Args":["InitLedger"]}' --tls --cafile /path/to/ca.crt
+```
+
+This will invoke the `InitLedger` function of the chaincode on the specified channel.
+
+These are the high-level steps to install your own chaincode on a test network in Hyperledger Fabric. You can refer to the official documentation for more details on each step and the various configuration options.
+
+
+-----------------------------------------------------------------
+
+	
+Sure, here are the detailed steps to create a simple smart contract and deploy it on a test network in Hyperledger Fabric:
+
+1. Install Hyperledger Fabric Prerequisites
+   - Before you start building your smart contract, make sure you have installed all the necessary prerequisites such as Docker, Docker Compose, Go, and Node.js. You can follow the official documentation for detailed installation instructions.
+   
+2. Set up a Hyperledger Fabric Network
+   - You can either set up a network manually or use the Fabric Test Network. The Fabric Test Network is a pre-configured network that you can use for development and testing. To use the Fabric Test Network, follow these steps:
+   - Clone the Fabric Samples repository from GitHub using the following command:
+     ```
+     git clone https://github.com/hyperledger/fabric-samples.git
+     ```
+   - Navigate to the `fabric-samples/test-network` directory and run the following command to start the network:
+     ```
+     ./network.sh up
+     ```
+   - This command will start the Fabric Test Network with one orderer, one peer, and two organizations. The peer will have two channels named `mychannel` and `yourchannel`.
+
+3. Create a Smart Contract
+   - You can use one of the supported programming languages such as Go, Java, or Node.js to write your smart contract code. For example, if you're using Node.js, you can use the `fabric-contract-api` package to write your smart contract code.
+   - Create a new directory for your smart contract code. For example, you can create a directory named `mycontract` using the following command:
+     ```
+     mkdir mycontract
+     ```
+   - Navigate to the `mycontract` directory and create a new file named `mycontract.js` using your preferred text editor. Add the following code to define a simple smart contract:
+     ```
+     'use strict';
+
+     const { Contract } = require('fabric-contract-api');
+
+     class MyContract extends Contract {
+         async initLedger(ctx) {
+             console.info('============= START : Initialize Ledger ===========');
+             const assets = [
+                 {
+                     id: '001',
+                     value: '100',
+                     owner: 'Alice',
+                 },
+                 {
+                     id: '002',
+                     value: '200',
+                     owner: 'Bob',
+                 },
+             ];
+
+             for (const asset of assets) {
+                 await ctx.stub.putState(asset.id, Buffer.from(JSON.stringify(asset)));
+                 console.info(`Added asset ${asset.id}`);
+             }
+
+             console.info('============= END : Initialize Ledger ===========');
+         }
+
+         async transferAsset(ctx, id, newOwner) {
+             const assetAsBytes = await ctx.stub.getState(id);
+             if (!assetAsBytes || assetAsBytes.length === 0) {
+                 throw new Error(`Asset ${id} does not exist`);
+             }
+             const asset = JSON.parse(assetAsBytes.toString());
+             asset.owner = newOwner;
+             await ctx.stub.putState(id, Buffer.from(JSON.stringify(asset)));
+             console.info(`Asset ${id} transferred to ${newOwner}`);
+         }
+     }
+
+     module.exports = MyContract;
+     ```
+
+4. Package the Smart Contract
+   - Once you've written your smart contract code, you need to package it into a chaincode package using the `peer lifecycle chaincode package` command. This command creates a .tar.gz file that contains the smart contract code and a `metadata.json` file that describes the chaincode.
+   - Navigate to the `mycontract` directory and run the following command to package the smart contract:
+     ```
+     peer lifecycle chaincode package mycontract.tar.gz --path . --lang node --label mycontract_1.0
+     ```
+   - This command packages the `my
+   
+   contract` directory and creates a `mycontract.tar.gz` file with the label `mycontract_1.0`.
+
+5. Install and Approve the Smart Contract
+   - To install and approve the smart contract on the test network, you need to follow these steps:
+   - Run the following command to install the smart contract on the peer:
+     ```
+     peer lifecycle chaincode install mycontract.tar.gz
+     ```
+   - This command installs the smart contract package on the peer.
+   - Run the following command to get the package ID of the installed smart contract:
+     ```
+     peer lifecycle chaincode queryinstalled
+     ```
+   - This command lists the installed smart contracts and their package IDs. Copy the package ID of the `mycontract` smart contract.
+   - Run the following command to approve the smart contract for your organization:
+     ```
+     peer lifecycle chaincode approveformyorg --channelID mychannel --name mycontract --version 1.0 --package-id <package ID> --sequence 1 --tls true --cafile <path to your CA certificate>
+     ```
+   - This command approves the smart contract for your organization on the `mychannel` channel with version `1.0` and sequence number `1`.
+
+6. Commit the Smart Contract
+   - To commit the smart contract on the channel, you need to follow these steps:
+   - Run the following command to check if the smart contract is approved by all organizations:
+     ```
+     peer lifecycle chaincode checkcommitreadiness --channelID mychannel --name mycontract --version 1.0 --sequence 1 --tls true --cafile <path to your CA certificate> --output json
+     ```
+   - This command checks if the smart contract is approved by all organizations on the `mychannel` channel with version `1.0` and sequence number `1`.
+   - If the output of the previous command shows that the smart contract is approved by all organizations, run the following command to commit the smart contract on the channel:
+     ```
+     peer lifecycle chaincode commit -o localhost:7050 --channelID mychannel --name mycontract --version 1.0 --sequence 1 --tls true --cafile <path to your CA certificate> --peerAddresses localhost:7051 --tlsRootCertFiles <path to your peer TLS certificate>
+     ```
+   - This command commits the smart contract on the `mychannel` channel with version `1.0` and sequence number `1`.
+
+7. Invoke the Smart Contract
+   - Once the smart contract is committed on the channel, you can invoke its functions using the `peer chaincode invoke` command. For example, to invoke the `transferAsset` function of the `mycontract` smart contract, run the following command:
+     ```
+     peer chaincode invoke -o localhost:7050 --tls true --cafile <path to your CA certificate> -C mychannel -n mycontract --peerAddresses localhost:7051 --tlsRootCertFiles <path to your peer TLS certificate> --isInit -c '{"function":"transferAsset","Args":["001","Bob"]}'
+     ```
+   - This command invokes the `transferAsset` function of the `mycontract` smart contract on the `mychannel` channel with arguments `["001","Bob"]`.
+
+That's it! You have successfully created a simple smart contract and deployed it on a test network in Hyperledger Fabric. You can modify the smart contract code and repeat the above steps to deploy the updated version of the smart contract.
